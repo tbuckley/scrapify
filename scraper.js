@@ -1,8 +1,7 @@
 var request = require('request'),
     jsdom = require('jsdom'),
     jquery = require('jquery'),
-    async = require('async'),
-    _ = require('underscore');
+    async = require('async');
 
 // Create a jQuery object from the given html page
 function createJqueryObject(page, cb) {
@@ -40,12 +39,21 @@ function Scraper() {
 Scraper.prototype.run = function(cb) {
 	this.doneCallback = cb;
 	this.running = true;
-	this.queue.forEach(this.parse);
+	var that = this;
+	this.queue.forEach(function(url) {
+		that.parse(url);
+	});
+};
+
+/* Register the url; returns true if URL wasn't registered before */
+Scraper.prototype.registerUrl = function(url) {
+	var ret = !this.addUrls[url];
+	this.addUrls[url] = true;
+	return ret;
 };
 
 Scraper.prototype.addUrl = function(url) {
-	if(!this.addedUrls[url]) {
-		this.addedUrls[url] = true;
+	if(this.registerUrl(url)) {
 		if(!this.running) {
 			this.queue.push(url);
 		} else {
@@ -53,13 +61,23 @@ Scraper.prototype.addUrl = function(url) {
 		}
 	}
 };
+Scraper.prototype.addUrls = function(urls) {
+	var that = this;
+	urls.forEach(function(url) {
+		that.addUrl(url);
+	});
+};
 
 Scraper.prototype.parse = function(url) {
 	this.started++;
+	var that = this;
 	loadUrlAsJquery(url, function(err, $) {
-		this.completed++;
-		if(this.started == this.completed) {
-			this.doneCallback();
+		that.pageHandler(url, $);
+		that.completed++;
+		if(that.started == that.completed) {
+			that.doneCallback();
 		}
 	});
 };
+
+module.exports = Scraper;
