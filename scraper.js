@@ -1,7 +1,8 @@
 var request = require('request'),
     jsdom = require('jsdom'),
     jquery = require('jquery'),
-    async = require('async');
+    async = require('async'),
+    noop = function(){};
 
 // Create a jQuery object from the given html page
 function createJqueryObject(page, cb) {
@@ -32,12 +33,12 @@ function Scraper() {
 	this.addedUrls = {};
 	this.queue = [];
 	this.running = false;
-	this.doneCallback = null;
+	this.doneCallback = noop;
 	this.started = this.completed = 0;
 }
 
 Scraper.prototype.run = function(cb) {
-	this.doneCallback = cb;
+	this.doneCallback = cb || noop;
 	this.running = true;
 	var that = this;
 	this.queue.forEach(function(url) {
